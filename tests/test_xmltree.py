@@ -5,6 +5,7 @@ from lxml import etree
 
 
 class XMLTreeTest(unittest.TestCase):
+    """Test the functionality of the XMLTree object."""
 
     def setUp(self):
         """Stuff to do in test initialization."""
@@ -117,11 +118,31 @@ class XMLTreeTest(unittest.TestCase):
         v2 = ['entityvals', 'entityrelations', 'entities',]
         self.assert_equals(v1, v2)
 
-    def get_leaf_nodes(self):
-        """ """
+    def test_get_leaf_nodes(self):
+        """Verify leaf nodes are collected properly."""
+        xmltree = XMLTree()
+        for query in self.queries:
+            xmltree.insert_query(xmltree.root, query)
 
-    def get_leaf_paths(self):
-        """ """
+        v1 = xmltree.get_leaf_nodes(xmltree.root)
+        v1 = [node.tag for node in v1]
+        v2 = [etree.Element('entityvals'),
+              etree.Element('id__EQUALS__1'),
+              etree.Element('entities'),]
+        v2 = [node.tag for node in v2]
+        self.assert_equals(v1, v2)
+
+    def test_get_leaf_paths(self):
+        """Verify leaf node paths are collected properly."""
+        xmltree = XMLTree()
+        for query in self.queries:
+            xmltree.insert_query(xmltree.root, query)
+
+        v1 = xmltree.get_leaf_paths(xmltree.root)
+        v2 = ['/querytree/select/__ALL__/from/entityvals',
+              '/querytree/select/__ALL__/from/entityrelations/where/id__EQUALS__1',
+              '/querytree/select/__ALL__/from/entities']
+        self.assert_equals(v1, v2)
 
         
 if __name__ == '__main__':
