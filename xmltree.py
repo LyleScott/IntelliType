@@ -25,6 +25,10 @@ class XMLTree(object):
 
     """
 
+    token_subs = [('"', '\''),
+                  ('*', '__ALL__'),
+                  ('=', '__EQUALS__'),]
+
     def __init__(self):
         """Initialization."""
         self.root = etree.Element('querytree')
@@ -35,9 +39,24 @@ class XMLTree(object):
         return etree.tostring(self.root, pretty_print=1)
 
     def tokenize(self, query):
-        """Split a query up into tokens."""
-        query = query.replace('*', '__ALL__')
+        """Split a query up into a list of tokens."""
+        if isinstance(query, list):
+            query = ' '.join(query)
+
+        query = query.lower()
+        for search, replace in self.token_subs:
+            query = query.replace(search, replace)
         query = query.split()
+
+        return query
+
+    def untokenize(self, query):
+        """Join a query token list to make a string."""
+        if isinstance(query, list):
+            query = ' '.join(query)
+
+        for replace, search in self.token_subs:
+            query = query.replace(search, replace)
 
         return query
 
@@ -58,7 +77,23 @@ class XMLTree(object):
             else:
                 prevtoken = existing_path[0]
 
-    def find_query(self, query):
+    def get_query_parts(self, query):
+        """Try to split a query up into complete nodes and an incomplete token.
+        If the user is starting a new token, return the entire string as nodes
+        and make the token a blank string.
+        """
+        blank_at_end = query[-1] == ' '
+        tokens = self.tokenize(query)
+        if blank_at_end:
+            node = ' '.join(tokens)
+            token = ''
+        else:
+            node = ' '.join(tokens[:-1])
+            token = tokens[-1]
+
+        return (node, token,)
+
+    def get_autocompletes(self, query):
         """Try to find the exact node for a given query."""
         tokens = self.tokenize(query)
         xpath = self._get_xpath(tokens)
@@ -76,28 +111,14 @@ class XMLTree(object):
             children = node[0].getchildren()
 
             for child in children:
-                ret.append(child.tag)
+                tag = self.untokenize(child.tag)
+                print 'tag', tag
+                ret.append(tag)
 
             return ret
 
         return []
                 
-    def get_query_parts(self, query):
-        """Try to split a query up into complete nodes and an incomplete token.
-        If the user is starting a new token, return the entire string as nodes
-        and make the token a blank string.
-        """
-        blank_at_end = query[-1] == ' '
-        query = query.split()
-        if blank_at_end:
-            nodes = query
-            token = ''
-        else:
-            nodes = query[:-1]
-            token = query[-1]
-
-        return (nodes, token,)
-
     def get_leaf_nodes(self, node, leaves=None):
         """Return all the leaf nodes in the tree."""
         if leaves is None:
