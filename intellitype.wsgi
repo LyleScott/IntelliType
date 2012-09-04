@@ -27,13 +27,11 @@ def application(environ, start_response):
     if 'userinput' in gets:
         userinput = gets['userinput']
         nodes, token = xtree.get_query_parts(userinput)
-        print 'nodes', nodes
         results = xtree.find_query(' '.join(nodes))
 
         query = ' '.join(nodes) + ' %s'
         results = [query % result for result in results]
 
-        print 'results', results
         ret = json.dumps(results)
 
     ret = ['jsonpcallback({"results": %s})' % ret,]
