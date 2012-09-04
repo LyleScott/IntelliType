@@ -2,29 +2,51 @@ from lxml import etree
 
 
 class XMLTree(object):
+    """A class for storing, retrieving, and modifying an XML representation of 
+    queries.
+
+    Example:
+        select * from foo 
+        select * from bar
+        select * from foo where id=1
+ 
+        SELECT
+          |
+          *
+          |
+        FROM
+          |
+      __________
+     foo       bar
+      |
+    where
+      |
+     id=1
+
+    """
 
     def __init__(self):
-        """ """
+        """Initialization."""
         self.root = etree.Element('querytree')
         self.tree = etree.ElementTree(self.root)
 
     def __repr__(self):
-        """ """
+        """String representation."""
         return etree.tostring(self.root, pretty_print=1)
 
     def tokenize(self, query):
-        """ """
+        """Split a query up into tokens."""
         query = query.replace('*', '__ALL__')
         query = query.split()
 
         return query
 
     def _get_xpath(self, tokens):
-        """ """
+        """Return the XPath representation for a list of tokens."""
         return '//%s' % '/'.join(tokens)
 
     def insert_query(self, root, query):
-        """ """
+        """Insert a query into the tree."""
         tokens = self.tokenize(query)
         prevtoken = root
         for i in range(len(tokens)):   
@@ -37,7 +59,7 @@ class XMLTree(object):
                 prevtoken = existing_path[0]
 
     def find_query(self, query):
-        """ """
+        """Try to find the exact node for a given query."""
         tokens = self.tokenize(query)
         xpath = self._get_xpath(tokens)
 
@@ -49,8 +71,10 @@ class XMLTree(object):
         if node:
             if len(node) != 1:
                 print 'ERROR'
+
             ret = []
             children = node[0].getchildren()
+
             for child in children:
                 ret.append(child.tag)
 
@@ -59,7 +83,10 @@ class XMLTree(object):
         return []
                 
     def get_query_parts(self, query):
-        """ """
+        """Try to split a query up into complete nodes and an incomplete token.
+        If the user is starting a new token, return the entire string as nodes
+        and make the token a blank string.
+        """
         blank_at_end = query[-1] == ' '
         query = query.split()
         if blank_at_end:
