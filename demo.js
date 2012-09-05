@@ -1,3 +1,8 @@
+/* Lyle Scott, III
+ * lyle@digitalfoo.net
+ * http://digitalfoo.net
+ */
+
 var KEY_ENTER = 13;
 var HOST = 'http://localhost:8080';
 
@@ -43,7 +48,7 @@ function getSuggestionsCallback(data, textStatus, jqXHR) {
     }
     
     if (html.length) {
-        html = '<h3>Suggestions</h3>' + html;
+        html = '<br><strong>Suggestions</strong><br>' + html;
     }
 
     $('#suggestions').html(html);

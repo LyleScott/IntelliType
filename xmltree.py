@@ -109,7 +109,7 @@ class XMLTree(object):
 
         return (node, token,)
 
-    def get_autocompletes(self, query):
+    def get_autocompletes(self, query, token=None):
         """Try to find the exact node for a given query."""
         tokens = self.tokenize(query)
         xpath = self._get_xpath(tokens)
@@ -127,7 +127,10 @@ class XMLTree(object):
             children = node[0].getchildren()
 
             for child in children:
-                tag = self.untokenize(child.tag)
+                tag = child.tag
+                if token and not tag.startswith(token):
+                    continue
+                tag = self.untokenize(tag)
                 ret.append(tag)
 
             return ret
@@ -165,10 +168,3 @@ class XMLTree(object):
             self.get_leaf_paths(child, paths)
 
         return paths        
-
-
-if __name__ == '__main__':
-    xmltree = XMLTree()
-    xmltree.insert_query(xmltree.root, 'select * from derp')
-    xmltree.insert_query(xmltree.root, 'select * from yeah')
-

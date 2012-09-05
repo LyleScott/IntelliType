@@ -47,7 +47,7 @@ def cbGetSuggestionsHandler(userinput, httphost):
     xml = xmlfile.read()
     xtree = xmltree.XMLTree(xml)
     nodes, token = xtree.get_query_parts(userinput)
-    results = xtree.get_autocompletes(nodes)
+    results = xtree.get_autocompletes(nodes, token)
     results = ['%s %s' % (nodes, result,) for result in results]
     closeXmlFile(xmlfile)
     return 'get_suggestions({"results": %s})' % json.dumps(results)   
