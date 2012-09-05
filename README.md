@@ -8,9 +8,10 @@ virtualenv
 ----------
 * virtualenv venv --no-site-packages
 * source venv/bin/activate
-* pip install lxml
 
-pip
----
-* sudo apt-get install libxml2-dev libxslt1-dev
+I had to install some prerequisite packages for lxml to compile.
+
+sudo apt-get install libxml2-dev libxslt1-dev
+
+* pip install lxml
 * pip install -r pip-requirements.txt
