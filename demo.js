@@ -48,7 +48,9 @@ function getSuggestionsCallback(data, textStatus, jqXHR) {
     }
     
     if (html.length) {
-        html = '<br><strong>Suggestions</strong><br>' + html;
+        html = html.replace(/__MARK_START__/g, '<strong>');
+        html = html.replace(/__MARK_END__/g, '</strong>');
+        html = '<p>' + html + '</p>';
     }
 
     $('#suggestions').html(html);
