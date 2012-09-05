@@ -41,16 +41,22 @@ def saveXmlFile(xml, file):
     """Write some XML to file handle."""
     file.write(xml)
     
-def cbGetSuggestionsHandler(userinput, httphost):
+def cbGetSuggestionsHandler(userinput, httphost, mark=False):
     """Callback handler for get_suggestions."""
     xmlfile = getXmlFile(httphost)
     xml = xmlfile.read()
     xtree = xmltree.XMLTree(xml)
     nodes, token = xtree.get_query_parts(userinput)
     results = xtree.get_autocompletes(nodes, token)
-    results = ['%s %s' % (nodes, result,) for result in results]
+    
+    _results = []
+    for result in results:
+        if mark:
+            nodes = '__MARK_START__%s' % nodes
+            result = result.replace(token, '%s__MARK_END__' % token)
+            _results.append('%s %s' % (nodes, result,))
     closeXmlFile(xmlfile)
-    return 'get_suggestions({"results": %s})' % json.dumps(results)   
+    return 'get_suggestions({"results": %s})' % json.dumps(_results)   
 
 def cbSubmitQueryHandler(userinput, httphost):
     """Callback handler for submit_query."""
@@ -85,7 +91,7 @@ def application(environ, start_response):
         callback = gets.get('cb', '')
         
         if callback == 'get_suggestions':
-            ret = cbGetSuggestionsHandler(userinput, httphost)
+            ret = cbGetSuggestionsHandler(userinput, httphost, mark=True)
         elif callback == 'submit_query':
             ret = cbSubmitQueryHandler(userinput, httphost)
 

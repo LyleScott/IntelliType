@@ -128,8 +128,10 @@ class XMLTree(object):
 
             for child in children:
                 tag = child.tag
+                
                 if token and not tag.startswith(token):
                     continue
+                
                 tag = self.untokenize(tag)
                 ret.append(tag)
 
