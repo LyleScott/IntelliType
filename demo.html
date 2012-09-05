@@ -35,13 +35,25 @@
                 data = data.substring('get_suggestions('.length, data.length); 
                 data = data.substring(0, data.length-1);
                 
+                var html = '';
+                
                 try {
                     var json = $.parseJSON(data);
+                    if (json && json.results) {
+                        html = json.results.join('<br>');
+                    }
                 } catch (e) {
-                	var json = ['error in the get_suggestions() callback:', e,]
+                	if (console && console.log) {
+                        console.log('error in the get_suggestions() callback: ' + e);                          
+                        console.log(e);
+                    }
+                }
+                
+                if (html.length) {
+                    html = '<h3>Suggestions</h3>' + html;
                 }
         
-                $('#results').html(json.results.join('<br>'));
+                $('#suggestions').html(html);
             }
             
             function submitQueryAjaxCall(query) {
@@ -62,13 +74,22 @@
                 data = data.substring('submit_query('.length, data.length); 
                 data = data.substring(0, data.length-1);
                 
+                var html = '';
+                
                 try {
                     var json = $.parseJSON(data);
+                    if (json) {
+                    	html = 'query added';
+                    }
                 } catch (e) {
-                    var json = ['error in the submit_query() callback:', e,]
+                    if (console && console.log) {
+                    	console.log('error in the submit_query() callback: ' + e);                      	
+                    	console.log(e);
+                    }
                 }
-        
-                $('#results').html(json.results.join('<br>'));
+                
+                $('#status').html(html);
+                setTimeout(function() { $('#status').html(''); }, 2000);
             }
         
             $(document).ready(function(){
@@ -86,7 +107,7 @@
                         // Add the query to the collection of known queries.
                         submitQueryAjaxCall(query);
                         $(this).val('');
-                        $('#results').html('');
+                        $('#suggestions').html('');
                 	} else {
                         // Get suggestions based on what the user is typing.
                 		getSuggestionAjaxCall(query);
@@ -99,7 +120,8 @@
 <body>
 
 <input type="text" id="userinput" />
-<div id="results"></div>
+<div id="suggestions"></div>
+<div id="status"></div>
 
 </body>
 </html>

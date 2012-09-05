@@ -29,9 +29,13 @@ class XMLTree(object):
                   ('*', '__ASTERISK__'),
                   ('=', '__EQUALS__'),]
 
-    def __init__(self):
+    def __init__(self, xml=None):
         """Initialization."""
-        self.root = etree.Element('querytree')
+        if xml:
+            self.root = etree.fromstring(xml)
+        else:
+            self.root = etree.Element('querytree')
+            
         self.tree = etree.ElementTree(self.root)
 
     def __repr__(self):
@@ -70,6 +74,11 @@ class XMLTree(object):
     def insert_query(self, root, query):
         """Insert a query into the tree."""
         tokens = self.tokenize(query)
+        
+        xpath = self._get_xpath(tokens)
+        if root.xpath(xpath):
+            return
+        
         prevtoken = root
         for i in range(len(tokens)):   
             subtokens = tokens[:i+1]
@@ -79,7 +88,9 @@ class XMLTree(object):
                 prevtoken = etree.SubElement(prevtoken, tokens[i])
             else:
                 prevtoken = existing_path[0]
-
+                
+        return prevtoken 
+                
     def get_query_parts(self, query):
         """Try to split a query up into complete nodes and an incomplete token.
         If the user is starting a new token, return the entire string as nodes
@@ -153,7 +164,7 @@ class XMLTree(object):
         for child in children:
             self.get_leaf_paths(child, paths)
 
-        return paths
+        return paths        
 
 
 if __name__ == '__main__':
