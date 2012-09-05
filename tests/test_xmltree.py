@@ -27,15 +27,15 @@ class XMLTreeTest(unittest.TestCase):
         xmltree = XMLTree()
 
         v1 = xmltree.tokenize(self.queries[0])
-        v2 = ['select', '__ALL__', 'from', 'entityvals',]
+        v2 = ['select', '__ASTERISK__', 'from', 'entityvals',]
         self.assert_equals(v1, v2)
 
         v1 = xmltree.tokenize(self.queries[1])
-        v2 = ['select', '__ALL__', 'from', 'entityrelations', 'where', 'id__EQUALS__1',]
+        v2 = ['select', '__ASTERISK__', 'from', 'entityrelations', 'where', 'id__EQUALS__1',]
         self.assert_equals(v1, v2)
 
         v1 = xmltree.tokenize(self.queries[2])
-        v2 = ['select', '__ALL__', 'from', 'entities',]
+        v2 = ['select', '__ASTERISK__', 'from', 'entities',]
         self.assert_equals(v1, v2)
 
     def test_get_xpath(self):
@@ -44,17 +44,17 @@ class XMLTreeTest(unittest.TestCase):
 
         tokens = xmltree.tokenize(self.queries[0])
         v1 = xmltree._get_xpath(tokens) 
-        v2 = '//select/__ALL__/from/entityvals'
+        v2 = '//select/__ASTERISK__/from/entityvals'
         self.assert_equals(v1, v2)
 
         tokens = xmltree.tokenize(self.queries[1])
         v1 = xmltree._get_xpath(tokens) 
-        v2 = '//select/__ALL__/from/entityrelations/where/id__EQUALS__1'
+        v2 = '//select/__ASTERISK__/from/entityrelations/where/id__EQUALS__1'
         self.assert_equals(v1, v2)
 
         tokens = xmltree.tokenize(self.queries[2])
         v1 = xmltree._get_xpath(tokens) 
-        v2 = '//select/__ALL__/from/entities'
+        v2 = '//select/__ASTERISK__/from/entities'
         self.assert_equals(v1, v2)
 
     def test_insert_query(self):
@@ -63,17 +63,17 @@ class XMLTreeTest(unittest.TestCase):
 
         xmltree.insert_query(xmltree.root, self.queries[0])
         v1 = etree.tostring(xmltree.root)
-        v2 = '<querytree><select><__ALL__><from><entityvals/></from></__ALL__></select></querytree>'
+        v2 = '<querytree><select><__ASTERISK__><from><entityvals/></from></__ASTERISK__></select></querytree>'
         self.assert_equals(v1, v2)
 
         xmltree.insert_query(xmltree.root, self.queries[1])
         v1 = etree.tostring(xmltree.root)
-        v2 = '<querytree><select><__ALL__><from><entityvals/><entityrelations><where><id__EQUALS__1/></where></entityrelations></from></__ALL__></select></querytree>'
+        v2 = '<querytree><select><__ASTERISK__><from><entityvals/><entityrelations><where><id__EQUALS__1/></where></entityrelations></from></__ASTERISK__></select></querytree>'
         self.assert_equals(v1, v2)
         
         xmltree.insert_query(xmltree.root, self.queries[2])
         v1 = etree.tostring(xmltree.root)
-        v2 = '<querytree><select><__ALL__><from><entityvals/><entityrelations><where><id__EQUALS__1/></where></entityrelations><entities/></from></__ALL__></select></querytree>'
+        v2 = '<querytree><select><__ASTERISK__><from><entityvals/><entityrelations><where><id__EQUALS__1/></where></entityrelations><entities/></from></__ASTERISK__></select></querytree>'
         self.assert_equals(v1, v2)
 
     def test_get_query_parts(self):
@@ -82,11 +82,13 @@ class XMLTreeTest(unittest.TestCase):
         xmltree = XMLTree()
 
         v1 = xmltree.get_query_parts('select * from entities')
-        v2 = ('select __ALL__ from', 'entities')
+        v2 = ('select * from', 'entities')
         self.assert_equals(v1, v2)
-
+        
+        # Test blank trailing space. Technically it is a start of a new token
+        # which is thus blank.
         v1 = xmltree.get_query_parts('select * from entities ')
-        v2 = ('select __ALL__ from entities', '')
+        v2 = ('select * from entities', '')
         self.assert_equals(v1, v2)
 
     def test_get_autocompletes(self):
@@ -139,9 +141,9 @@ class XMLTreeTest(unittest.TestCase):
             xmltree.insert_query(xmltree.root, query)
 
         v1 = xmltree.get_leaf_paths(xmltree.root)
-        v2 = ['/querytree/select/__ALL__/from/entityvals',
-              '/querytree/select/__ALL__/from/entityrelations/where/id__EQUALS__1',
-              '/querytree/select/__ALL__/from/entities']
+        v2 = ['/querytree/select/__ASTERISK__/from/entityvals',
+              '/querytree/select/__ASTERISK__/from/entityrelations/where/id__EQUALS__1',
+              '/querytree/select/__ASTERISK__/from/entities',]
         self.assert_equals(v1, v2)
 
         

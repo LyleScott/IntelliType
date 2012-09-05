@@ -26,7 +26,7 @@ class XMLTree(object):
     """
 
     token_subs = [('"', '\''),
-                  ('*', '__ALL__'),
+                  ('*', '__ASTERISK__'),
                   ('=', '__EQUALS__'),]
 
     def __init__(self):
@@ -37,6 +37,10 @@ class XMLTree(object):
     def __repr__(self):
         """String representation."""
         return etree.tostring(self.root, pretty_print=1)
+    
+    def _get_xpath(self, tokens):
+        """Return the XPath representation for a list of tokens."""
+        return '//%s' % '/'.join(tokens)
 
     def tokenize(self, query):
         """Split a query up into a list of tokens."""
@@ -46,8 +50,11 @@ class XMLTree(object):
         query = query.lower()
         for search, replace in self.token_subs:
             query = query.replace(search, replace)
+            
+        for search in [token[1] for token in self.token_subs]:
+            query = query.replace(search.lower(), search)
+        
         query = query.split()
-
         return query
 
     def untokenize(self, query):
@@ -59,10 +66,6 @@ class XMLTree(object):
             query = query.replace(search, replace)
 
         return query
-
-    def _get_xpath(self, tokens):
-        """Return the XPath representation for a list of tokens."""
-        return '//%s' % '/'.join(tokens)
 
     def insert_query(self, root, query):
         """Insert a query into the tree."""
@@ -86,9 +89,11 @@ class XMLTree(object):
         tokens = self.tokenize(query)
         if blank_at_end:
             node = ' '.join(tokens)
+            node = self.untokenize(node)
             token = ''
         else:
             node = ' '.join(tokens[:-1])
+            node = self.untokenize(node)
             token = tokens[-1]
 
         return (node, token,)
@@ -112,7 +117,6 @@ class XMLTree(object):
 
             for child in children:
                 tag = self.untokenize(child.tag)
-                print 'tag', tag
                 ret.append(tag)
 
             return ret
@@ -157,5 +161,3 @@ if __name__ == '__main__':
     xmltree.insert_query(xmltree.root, 'select * from derp')
     xmltree.insert_query(xmltree.root, 'select * from yeah')
 
-    print xmltree.get_leaf_nodes(xmltree.root)
-    print xmltree.get_leaf_paths(xmltree.root)
