@@ -5,16 +5,10 @@ lyle@digitalfoo.net
 http://digitalfoo.net
 """
 
-import os
-#import sys
-
-#sys.path.append(os.path.dirname(__file__))
-#sys.path.append('/opt/local/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/site-packages')
-
-
 import json
 import os
 import re
+import sys
 import xmltree
 
 from lxml import etree 
@@ -107,6 +101,11 @@ def application(environ, start_response):
 
 
 if __name__ == '__main__':
+    import sys
     from wsgiref.simple_server import make_server
-    server = make_server('localhost', 8080, application)
+    if len(sys.argv) > 1:
+        port = sys.argv[2]
+    else:
+        port = 8080
+    server = make_server('localhost', port, application)
     server.serve_forever()
