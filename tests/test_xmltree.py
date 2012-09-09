@@ -152,7 +152,17 @@ class XMLTreeTest(unittest.TestCase):
               '/querytree/select/__ASTERISK__/from/entities',]
         self.assert_equals(v1, v2)
 
+    def test_get_existing_queries(self):
+        """ """
+        xmltree = XMLTree()
+        for query in self.queries:
+            xmltree.insert_query(xmltree.root, query)
+
+        v1 = xmltree.get_existing_queries(xmltree.root)
+        v2 = ['select * from entityvals',
+              'select * from entityrelations where id=1',
+              'select * from entities',]
+        self.assert_equals(v1, v2)
         
 if __name__ == '__main__':
     unittest.main()
-
