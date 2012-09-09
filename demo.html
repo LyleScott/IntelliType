@@ -8,6 +8,7 @@ http://digitalfoo.net
 <html>
     <head>
         <title>IntelliType Demo</title>
+        
         <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.8.0/jquery.min.js"></script>
         <script type="text/javascript" src="demo.js"></script>
         
@@ -21,7 +22,7 @@ http://digitalfoo.net
             }
             #container {
                 margin: .5em auto 0 auto;
-                width: 400px;
+                width: 600px;
                 font-size: 1.2em;
             }
             #userinput {
@@ -38,11 +39,17 @@ http://digitalfoo.net
 <div id="container">
 
 <div id="info">
-    <p>Start the server:</p>
-    <ol>
-        <li>install python-lxml</li>
-        <li>python intellitype.wsgi</li>
-    </ol>
+    <p>I wrote this to be
+    <a href="http://wsgi.readthedocs.org/en/latest/learn.html">WSGI</a>
+    compliant to you can use it with most webservers.
+    For this demo, just run the <em><a href="intellitype.wsgi">intellitype.wsgi</a></em>
+    Python program directly to launch
+    <a href="http://docs.python.org/library/wsgiref.html#module-wsgiref.simple_server">a small HTTP server</a>
+    provided by the WSGI module that is in the Python standard library.</p>
+    <ul>
+        <li>Make sure the <a href="http://lxml.de">lxml</a> Python library is installed.</li>
+        <li>Start the server by running <em>intellitype.wsgi</em> with python.</li>
+    </ul>
     <p>As you type, the program suggest autocompletion options based on what
     has previously been entered.</p>
     <ol>
