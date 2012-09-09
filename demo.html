@@ -13,25 +13,27 @@ http://digitalfoo.net
         <script type="text/javascript" src="demo.js"></script>
         
         <style>
-            h1 { 
-                margin: .2em 0;
-                font-size: 1.2em;
+            body {
+                font-size: .9em;
+                background-color: #333;
+                text-align: justify;
             }
-            #info {
-                font-size: .8em;
-            }
+            #info ul { font-size:1em; }
             #container {
-                margin: .5em auto 0 auto;
-                width: 600px;
-                font-size: 1.2em;
+                margin: .6em auto 0 auto;
+                width: 700px;
+                border: 3px solid #000;
+                background-color: #F0F0F0;
+                padding: 0em .7em .7em .7em;
             }
             #userinput {
-                font-size: 1.2em;
-                width: 100%;
+                font-size: 1.1em;
+                width: 99%;
             }
             #suggestions {
+                padding: .1em .3em;
                 font-size: 1.1em;
-                height: 5.5em;
+                background-color: #CCC;
             }
         </style>
     </head>
@@ -41,7 +43,7 @@ http://digitalfoo.net
 <div id="info">
     <p>I wrote this to be
     <a href="http://wsgi.readthedocs.org/en/latest/learn.html">WSGI</a>
-    compliant to you can use it with most webservers.
+    compliant so you can use it any webserver that can support WSGI.
     For this demo, just run the <em><a href="intellitype.wsgi">intellitype.wsgi</a></em>
     Python program directly to launch
     <a href="http://docs.python.org/library/wsgiref.html#module-wsgiref.simple_server">a small HTTP server</a>
@@ -58,11 +60,16 @@ http://digitalfoo.net
         <li>the cat and the&lt;WAIT-AND-LOOK&gt;</li>
     </ol>
     <p>You can <a href="./xmls">browse the <em>xmls</em> directory</a> to view
-    generated XML.</p>
+    the generated XML. New entries are inserted into the XML in a tree-like
+    fashion for easy searching. When a search query comes in, the entire query
+    is split into tokens (think words). The suggestions are the child nodes 
+    of the full path represented by the current series of tokens, minus the last
+    one (though, if the last token is being typed, child nodes are filtered such
+    that all strings start with the token that is being typed).</p>
+    <p>Try it out: type to search or press enter to add the text input to the
+    tree of possible suggestions.</p>
 </div>
-
-<p>Try it out...</p>
-<p><input type="text" id="userinput"/><p>
+<input type="text" id="userinput"/>
 <div id="suggestions"></div>
 <div id="existing"></div>
 
