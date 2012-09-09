@@ -78,7 +78,7 @@ function submitQueryCallback(data, textStatus, jqXHR) {
     try {
         var json = $.parseJSON(data);
         if (json) {
-        	html = 'query added';
+        	html = 'query added...';
         }
     } catch (e) {
         if (console && console.log) {
@@ -88,7 +88,7 @@ function submitQueryCallback(data, textStatus, jqXHR) {
     }
     
     $('#status').html(html);
-    setTimeout(function() { $('#status').html(''); }, 2000);
+    setTimeout(function() { $('#status').html(''); }, 1500);
 }
 
 $(document).ready(function(){
