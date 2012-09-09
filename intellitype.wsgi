@@ -8,7 +8,6 @@ http://digitalfoo.net
 import json
 import os
 import re
-import sys
 import xmltree
 
 from lxml import etree 
