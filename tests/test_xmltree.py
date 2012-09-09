@@ -1,3 +1,9 @@
+"""
+Lyle Scott, III
+lyle@digitalfoo.net
+http://digitalfoo.net
+"""
+
 import unittest
 
 from xmltree import XMLTree

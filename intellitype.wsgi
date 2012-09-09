@@ -1,4 +1,9 @@
 #!/usr/bin/env python
+"""
+Lyle Scott, III
+lyle@digitalfoo.net
+http://digitalfoo.net
+"""
 
 import os
 #import sys
