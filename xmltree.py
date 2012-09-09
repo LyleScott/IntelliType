@@ -71,6 +71,8 @@ class XMLTree(object):
         """Join a query token list to make a string."""
         if isinstance(query, list):
             query = ' '.join(query)
+        elif query.startswith('/querytree/'):
+            query = query[len('/querytree/'):].replace('/', ' ')
 
         for replace, search in self.token_subs:
             query = query.replace(search, replace)
@@ -175,4 +177,11 @@ class XMLTree(object):
         for child in children:
             self.get_leaf_paths(child, paths)
 
-        return paths        
+        return paths       
+    
+    def get_existing_queries(self, root=None):
+        """ """
+        if root is None:
+            root = self.root
+            
+        return [self.untokenize(path) for path in self.get_leaf_paths(root)]

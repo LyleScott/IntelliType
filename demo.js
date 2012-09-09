@@ -19,7 +19,7 @@ function getSuggestionAjaxCall(query) {
 	// Make an AJAX call to get a list of suggestions.
     $.ajax({
         url: HOST + '',
-        data: {'userinput': query, 'cb': 'get_suggestions'},
+        data: {'userinput': query, 'cb': 'get_suggestions', 'n': 7, 'mark': true},
         datatype: 'jsonp',
         jsonp: 'callback',
         jsonpCallback: 'get_suggestions',
@@ -91,7 +91,45 @@ function submitQueryCallback(data, textStatus, jqXHR) {
     setTimeout(function() { $('#status').html(''); }, 1500);
 }
 
+function getExistingQueriesAjaxCall(query) {
+    // Make an AJAX call to get a list of suggestions.
+    $.ajax({
+        url: HOST,
+        data: {'cb': 'get_existing'},
+        datatype: 'jsonp',
+        jsonp: 'callback',
+        jsonpCallback: 'get_existing',
+        success: getExistingQueriesCallback,
+        error: ajaxError
+    });
+}
+
+function getExistingQueriesCallback(data, textStatus, jqXHR) {
+    // Parse the returned value as JSON.
+    data = data.substring('get_existing('.length, data.length); 
+    data = data.substring(0, data.length-1);
+
+    var html = '';
+    
+    try {
+        var json = $.parseJSON(data);
+        if (json) {
+        	html = json['results'].join('<br>');
+        }
+    } catch (e) {
+        if (console && console.log) {
+        	console.log('error in the get_existing() callback: ' + e);                      	
+        	console.log(e);
+        }
+    }
+ 
+    $('#existing').html(html);
+}
+
+
 $(document).ready(function(){
+	
+	getExistingQueriesAjaxCall();
 	
     $("#userinput").bind('keyup', function(event) {
     	
@@ -107,6 +145,7 @@ $(document).ready(function(){
             submitQueryAjaxCall(query);
             $(this).val('');
             $('#suggestions').html('');
+            getExistingQueriesAjaxCall();
     	} else {
             // Get suggestions based on what the user is typing.
     		getSuggestionAjaxCall(query);
