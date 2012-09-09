@@ -48,11 +48,15 @@ def cbGetSuggestionsHandler(userinput, httphost, mark=False):
     results = xtree.get_autocompletes(nodes, token)
     
     _results = []
+    
+    if mark:
+        nodes = '__MARK_START__%s' % nodes
+    
     for result in results:
         if mark:
-            nodes = '__MARK_START__%s' % nodes
             result = result.replace(token, '%s__MARK_END__' % token)
-            _results.append('%s %s' % (nodes, result,))
+            
+        _results.append('%s %s' % (nodes, result,))
     closeXmlFile(xmlfile)
     return 'get_suggestions({"results": %s})' % json.dumps(_results)   
 
