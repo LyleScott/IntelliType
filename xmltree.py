@@ -183,5 +183,8 @@ class XMLTree(object):
         """ """
         if root is None:
             root = self.root
-            
-        return [self.untokenize(path) for path in self.get_leaf_paths(root)]
+        paths = self.get_leaf_paths(root)
+        if paths:
+            paths = [self.untokenize(path) for path in self.get_leaf_paths(root)]
+       
+        return paths
