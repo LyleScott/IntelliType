@@ -186,5 +186,5 @@ class XMLTree(object):
         paths = self.get_leaf_paths(root)
         if paths:
             paths = [self.untokenize(path) for path in self.get_leaf_paths(root)]
-       
-        return paths
+    
+        return paths or []
