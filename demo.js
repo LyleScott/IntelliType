@@ -8,7 +8,7 @@ var HOST = 'http://localhost:8080';
 
 
 //
-// getSuggestions
+// getAutocompletes
 //
 //
 
@@ -16,37 +16,30 @@ function getSuggestionAjaxCall(query) {
 	// Make an AJAX call to get a list of suggestions.
     $.ajax({
         url: HOST + '',
-        data: {'userinput': query, 'cb': 'get_suggestions', 'n': 7,
+        data: {'userinput': query, 'cb': 'get_autocompletes', 'n': 7,
         	   'mark': true},
         datatype: 'jsonp',
         jsonp: 'callback',
-        jsonpCallback: 'get_suggestions',
-        success: getSuggestionsCallback,
+        jsonpCallback: 'get_autocompletes',
+        success: getAutocompletesCallback,
         error: ajaxError
     });
 }
 
-function getSuggestionsCallback(data, textStatus, jqXHR) {
-	// Parse the returned value as JSON.
-    data = data.substring('get_suggestions('.length, data.length); 
-    data = data.substring(0, data.length-1);
-    
+function getAutocompletesCallback(data, textStatus, jqXHR) {
+	// 
     var html = '';
+    var json = parseJsonp(data, 'get_autocompletes(', 'getAutocompletes');
     
-    try {
-        var json = $.parseJSON(data);
-        if (json && json.results) {
-            html = json.results.join('<br>');
-        }
-    } catch (e) {
-    	if (console && console.log) {
-            console.log('error in the get_suggestions() callback: ' + e);                          
-            console.log(e);
-        }
+    if (json) {
+    	html = 'query added...';
+    } 
+    
+    if (json) {
+        html = json.results.join('<br>');
+        html = markToStrong(html);
     }
     
-	html = markToStrong(html);
-
     $('#suggestions').html(html);
 }
 
@@ -70,23 +63,13 @@ function submitQueryAjaxCall(query) {
 }
 
 function submitQueryCallback(data, textStatus, jqXHR) {
-    // Parse the returned value as JSON.
-    data = data.substring('submit_query('.length, data.length); 
-    data = data.substring(0, data.length-1);
-    
+    // Check for a successful return and show a success message.	
     var html = '';
+    var json = parseJsonp(data, 'submit_query(', 'submitQueryCallback');
     
-    try {
-        var json = $.parseJSON(data);
-        if (json) {
-        	html = 'query added...';
-        }
-    } catch (e) {
-        if (console && console.log) {
-        	console.log('error in the submit_query() callback: ' + e);                      	
-        	console.log(e);
-        }
-    }
+    if (json) {
+    	html = 'query added...';
+    } 
     
     $('#status').html(html);
     setTimeout(function() { $('#status').html(''); }, 1500);
@@ -112,22 +95,12 @@ function getExistingQueriesAjaxCall(query) {
 }
 
 function getExistingQueriesCallback(data, textStatus, jqXHR) {
-    // Parse the returned value as JSON.
-    data = data.substring('get_existing('.length, data.length); 
-    data = data.substring(0, data.length-1);
-
+    // Get all existing queries and print them in the #existing div.
     var html = '';
+    var json = parseJsonp(data, 'get_existing(', 'getExistingQueries');
     
-    try {
-        var json = $.parseJSON(data);
-        if (json) {
-        	html = json['results'].join('<br>');
-        }
-    } catch (e) {
-        if (console && console.log) {
-        	console.log('error in the get_existing() callback: ' + e);                      	
-        	console.log(e);
-        }
+    if (json) {
+    	html = json['results'].join('<br>');
     }
  
     $('#existing').html(html);
@@ -148,10 +121,28 @@ function ajaxError(jqXHR, textStatus, errorThrown) {
 }
 
 function markToStrong(query) {
-	 query = query.replace(/__MARK_START__/g, '<strong>');
-     query = query.replace(/__MARK_END__/g, '</strong>');
-     
-     return query;
+	// Replace the MARKS with strongs.
+	query = query.replace(/__MARK_START__/g, '<strong>');
+    query = query.replace(/__MARK_END__/g, '</strong>');
+ 
+    return query;
+}
+
+function parseJsonp(data, prefix, error_label) {
+	// Parse a jsonp callback valid JSON.
+	data = data.substring(prefix.length, data.length); 
+	data = data.substring(0, data.length-1);
+	
+    try {
+        return json = $.parseJSON(data);
+    } catch (e) {
+        if (console && console.log) {
+        	console.log('error ' + error_label + ': ' + e);                      	
+        	console.log(e);
+        }
+    	
+    	return 'ERROR';
+    }
 }
 
 

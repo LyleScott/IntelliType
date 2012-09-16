@@ -41,7 +41,7 @@ def saveXmlFile(xml, file):
     
 def cbGetSuggestionsHandler(userinput, httphost, mark=False, num_results=None,
                             next_token_only=False):
-    """Callback handler for get_suggestions."""
+    """Callback handler for get_autocompletes."""
     xmlfile = getXmlFile(httphost)
     xml = xmlfile.read()
     xtree = xmltree.XMLTree(xml)
@@ -49,7 +49,7 @@ def cbGetSuggestionsHandler(userinput, httphost, mark=False, num_results=None,
     results = xtree.get_autocompletes(nodes, token, mark=True, n_results=10,
                                       next_token_only=next_token_only)
     closeXmlFile(xmlfile)
-    return 'get_suggestions({"results": %s})' % json.dumps(results)   
+    return 'get_autocompletes({"results": %s})' % json.dumps(results)   
 
 def cbSubmitQueryHandler(userinput, httphost):
     """Callback handler for submit_query."""
@@ -115,7 +115,7 @@ def application(environ, start_response):
     if 'userinput' in gets:
         userinput = gets['userinput']
         
-        if callback == 'get_suggestions':
+        if callback == 'get_autocompletes':
             mark = gets.get('mark', False)
             num_results = gets.get('n', 7)
             next_token_only = gets.get('next_token_only', False)
