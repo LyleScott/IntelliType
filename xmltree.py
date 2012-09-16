@@ -120,7 +120,7 @@ class XMLTree(object):
 
         return (node, token,)
 
-    def get_autocompletes(self, query, token=None, mark=False, n_results=10,
+    def get_autocompletes(self, query, token=None, mark=False, n_results=None,
                           next_token_only=False):
         """Try to find the exact node for a given query.
         
@@ -129,6 +129,15 @@ class XMLTree(object):
         next_token_only -- autocomplete the next token only instead of the
                            entire query
         """
+        
+        # argument sanity check
+        if n_results is not None:
+            try:
+                n_results = int(n_results)
+            except ValueError as e:
+                print 'n_results is not an integer: %s' % e
+                return []
+        
         tokens = self.tokenize(query)
         xpath = self.generate_tokens_xpath(tokens)
         ret = []
@@ -173,11 +182,12 @@ class XMLTree(object):
                 else:        
                     ret.extend(existing_queries)
                     
-                if len(ret) > n_results:
-                    ret = ret[:n_results]
-                    break
-                elif len(ret) == n_results:
-                    break
+                if n_results:
+                    if len(ret) > n_results:
+                        ret = ret[:n_results]
+                        break
+                    elif len(ret) == n_results:
+                        break
                 
         return ret
                 
