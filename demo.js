@@ -6,20 +6,18 @@
 var KEY_ENTER = 13;
 var HOST = 'http://localhost:8080';
 
-function ajaxError(jqXHR, textStatus, errorThrown) {
-	// Attempt to gracefully print an error in a jQuery AJAX call.
-    if (console && console.log) {
-        console.log('jQuery AJAX error:\n' +
-        		    textStatus + '\n' +
-        		    errorThrown);
-    }
-}
+
+//
+// getSuggestions
+//
+//
 
 function getSuggestionAjaxCall(query) {
 	// Make an AJAX call to get a list of suggestions.
     $.ajax({
         url: HOST + '',
-        data: {'userinput': query, 'cb': 'get_suggestions', 'n': 7, 'mark': true, 'next_token_only': true},
+        data: {'userinput': query, 'cb': 'get_suggestions', 'n': 7,
+        	   'mark': true},
         datatype: 'jsonp',
         jsonp: 'callback',
         jsonpCallback: 'get_suggestions',
@@ -47,13 +45,16 @@ function getSuggestionsCallback(data, textStatus, jqXHR) {
         }
     }
     
-    if (html.length) {
-        html = html.replace(/__MARK_START__/g, '<strong>');
-        html = html.replace(/__MARK_END__/g, '</strong>');
-    }
+	html = markToStrong(html);
 
     $('#suggestions').html(html);
 }
+
+
+//
+// submitQuery
+//
+//
 
 function submitQueryAjaxCall(query) {
     // Make an AJAX call to get a list of suggestions.
@@ -91,6 +92,12 @@ function submitQueryCallback(data, textStatus, jqXHR) {
     setTimeout(function() { $('#status').html(''); }, 1500);
 }
 
+
+//
+// getExisting
+//
+//
+
 function getExistingQueriesAjaxCall(query) {
     // Make an AJAX call to get a list of suggestions.
     $.ajax({
@@ -124,6 +131,27 @@ function getExistingQueriesCallback(data, textStatus, jqXHR) {
     }
  
     $('#existing').html(html);
+}
+
+//
+// Utilities.
+//
+//
+
+function ajaxError(jqXHR, textStatus, errorThrown) {
+	// Attempt to gracefully print an error in a jQuery AJAX call.
+    if (console && console.log) {
+        console.log('jQuery AJAX error:\n' +
+        		    textStatus + '\n' +
+        		    errorThrown);
+    }
+}
+
+function markToStrong(query) {
+	 query = query.replace(/__MARK_START__/g, '<strong>');
+     query = query.replace(/__MARK_END__/g, '</strong>');
+     
+     return query;
 }
 
 
