@@ -48,8 +48,10 @@ class XMLTree(object):
         """String representation."""
         return etree.tostring(self.root, pretty_print=1)
     
-    def _get_xpath(self, tokens):
+    def generate_tokens_xpath(self, tokens):
         """Return the XPath representation for a list of tokens."""
+        if not isinstance(tokens, list):
+            tokens = (tokens,)
         return '//%s' % '/'.join(tokens)
 
     def tokenize(self, query):
@@ -65,6 +67,7 @@ class XMLTree(object):
             query = query.replace(search.lower(), search)
         
         query = query.split()
+        
         return query
 
     def untokenize(self, query):
@@ -83,14 +86,14 @@ class XMLTree(object):
         """Insert a query into the tree."""
         tokens = self.tokenize(query)
         
-        xpath = self._get_xpath(tokens)
+        xpath = self.generate_tokens_xpath(tokens)
         if root.xpath(xpath):
             return
         
         prevtoken = root
         for i in range(len(tokens)):   
             subtokens = tokens[:i+1]
-            subtokens_xpath = self._get_xpath(subtokens)
+            subtokens_xpath = self.generate_tokens_xpath(subtokens)
             existing_path = root.xpath(subtokens_xpath)
             if not existing_path:
                 prevtoken = etree.SubElement(prevtoken, tokens[i])
@@ -117,35 +120,66 @@ class XMLTree(object):
 
         return (node, token,)
 
-    def get_autocompletes(self, query, token=None):
-        """Try to find the exact node for a given query."""
+    def get_autocompletes(self, query, token=None, mark=False, n_results=10,
+                          next_token_only=False):
+        """Try to find the exact node for a given query.
+        
+        query           -- a query to find in the XML tree
+        token           -- a token to filter out would-be autocompletes
+        next_token_only -- autocomplete the next token only instead of the
+                           entire query
+        """
         tokens = self.tokenize(query)
-        xpath = self._get_xpath(tokens)
+        xpath = self.generate_tokens_xpath(tokens)
+        ret = []
 
         try:
             node = self.root.xpath(xpath)
         except etree.XPathEvalError:
+            # The XPath to the node was not found.
+            return []
+        
+        # Empty tree. 
+        if not node:
             return []
 
-        if node:
-            if len(node) != 1:
-                print 'ERROR'
+        # Since a node was found, loop over each child to collect a proper
+        # autocompletes.
+        for child in node[0].getchildren():
+            
+            # The query does not autocomplete this token.
+            if token and not child.tag.startswith(token):
+                continue
 
-            ret = []
-            children = node[0].getchildren()
-
-            for child in children:
-                tag = child.tag
-                
-                if token and not tag.startswith(token):
-                    continue
-                
-                tag = self.untokenize(tag)
+            if next_token_only is True:    
+                tag = self.untokenize(child.tag)
+                if mark:
+                    tag = '__MARK_START__%s__MARK_END__%s' % (tag[:len(token)], tag[len(token):])
                 ret.append(tag)
-
-            return ret
-
-        return []
+            else:
+                existing_queries = self.get_children_queries(child, include_self=True)
+    
+                if mark:
+                    # Mark the substring of the query that is known.
+                    for existing_query in existing_queries:
+                        existing_query = '__MARK_START__%s' % existing_query
+                        if token:
+                            token = self.untokenize(token)
+                            q = '%s %s' % (query, token,)
+                        else:
+                            q = query
+                        existing_query = existing_query.replace(q, q+'__MARK_END__')
+                        ret.append(existing_query)
+                else:        
+                    ret.extend(existing_queries)
+                    
+                if len(ret) > n_results:
+                    ret = ret[:n_results]
+                    break
+                elif len(ret) == n_results:
+                    break
+                
+        return ret
                 
     def get_leaf_nodes(self, node, leaves=None):
         """Return all the leaf nodes in the tree."""
@@ -172,18 +206,23 @@ class XMLTree(object):
 
         if not children:
             paths.append(self.tree.getpath(node))
-            return
+            return paths
 
         for child in children:
             self.get_leaf_paths(child, paths)
 
         return paths       
     
-    def get_existing_queries(self, root=None):
-        """ """
+    def get_children_queries(self, root=None, include_self=False):
+        """Get a list of untokenized leafs below a node."""
         if root is None:
             root = self.root
-        paths = self.get_leaf_paths(root)
+        paths = []
+        
+        if include_self:
+            paths.append(root)    
+            
+        paths.extend(self.get_leaf_paths(root))
         if paths:
             paths = [self.untokenize(path) for path in self.get_leaf_paths(root)]
     

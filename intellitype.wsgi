@@ -39,30 +39,17 @@ def saveXmlFile(xml, file):
     """Write some XML to file handle."""
     file.write(xml)
     
-def cbGetSuggestionsHandler(userinput, httphost, mark=False, num_results=None):
+def cbGetSuggestionsHandler(userinput, httphost, mark=False, num_results=None,
+                            next_token_only=False):
     """Callback handler for get_suggestions."""
     xmlfile = getXmlFile(httphost)
     xml = xmlfile.read()
     xtree = xmltree.XMLTree(xml)
     nodes, token = xtree.get_query_parts(userinput)
-    results = xtree.get_autocompletes(nodes, token)
-    
-    _results = []
-    
-    if mark:
-        nodes = '__MARK_START__%s' % nodes
-    
-    for result in results:
-        if mark:
-            result = result.replace(token, '%s__MARK_END__' % token)
-            
-        _results.append('%s %s' % (nodes, result,))
-        
-        if len(_results) == num_results:
-            break
-        
+    results = xtree.get_autocompletes(nodes, token, mark=True, n_results=10,
+                                      next_token_only=next_token_only)
     closeXmlFile(xmlfile)
-    return 'get_suggestions({"results": %s})' % json.dumps(_results)   
+    return 'get_suggestions({"results": %s})' % json.dumps(results)   
 
 def cbSubmitQueryHandler(userinput, httphost):
     """Callback handler for submit_query."""
@@ -86,11 +73,31 @@ def cbGetExistingQueries(httphost):
     xmlfile = getXmlFile(httphost)
     xml = xmlfile.read()
     xtree = xmltree.XMLTree(xml)
-    paths = xtree.get_existing_queries(xtree.root)
+    paths = xtree.get_children_queries(xtree.root)
     closeXmlFile(xmlfile)
 
     return ['get_existing({"results": %s})' % json.dumps(paths),]
 
+def _parse_gets(gets):
+    """Parse list of key/value tuples into their literal values."""
+    _gets = {}
+    for key, value in gets:
+        if isinstance(value, int):
+            pass
+        elif isinstance(value, float):
+            pass
+        elif isinstance(value, bool):
+            pass
+        elif value.isdigit():
+            value = int(value)
+        elif value.lower() in ['t', 'true', 1,]:
+            value = True
+        elif value.lower() in ['f', 'false', 0,]:
+            value = False
+                
+        _gets[key] = value
+        
+    return _gets
 
 def application(environ, start_response):
     """Basically, fire off the callback handler."""
@@ -99,23 +106,30 @@ def application(environ, start_response):
                ('Access-Control-Allow-Methods', 'GET'),] 
     start_response("200 OK", headers)
 
+    ret = None
     httphost = environ['REMOTE_ADDR']
-    gets = dict(parse_qsl(environ.get('QUERY_STRING')))
+    gets = parse_qsl(environ.get('QUERY_STRING'))
+    gets = _parse_gets(gets)
     callback = gets.get('cb', '')
     
     if 'userinput' in gets:
         userinput = gets['userinput']
         
         if callback == 'get_suggestions':
-            mark = gets['mark']
-            num_results = gets['n']
-            ret = cbGetSuggestionsHandler(userinput, httphost, mark=mark, num_results=num_results)
+            mark = gets.get('mark', False)
+            num_results = gets.get('n', 7)
+            next_token_only = gets.get('next_token_only', False)
+            ret = cbGetSuggestionsHandler(userinput, httphost, mark=mark,
+                                          num_results=num_results,
+                                          next_token_only=next_token_only)
         elif callback == 'submit_query':
             ret = cbSubmitQueryHandler(userinput, httphost)
     elif callback == 'get_existing':
         ret = cbGetExistingQueries(httphost)
 
-    if not isinstance(ret, list):
+    if not ret:
+        return []
+    elif not isinstance(ret, list):
         ret = list(ret)
         
     return ret

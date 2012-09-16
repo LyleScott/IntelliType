@@ -19,7 +19,7 @@ function getSuggestionAjaxCall(query) {
 	// Make an AJAX call to get a list of suggestions.
     $.ajax({
         url: HOST + '',
-        data: {'userinput': query, 'cb': 'get_suggestions', 'n': 7, 'mark': true},
+        data: {'userinput': query, 'cb': 'get_suggestions', 'n': 7, 'mark': true, 'next_token_only': true},
         datatype: 'jsonp',
         jsonp: 'callback',
         jsonpCallback: 'get_suggestions',

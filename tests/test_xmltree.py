@@ -44,22 +44,22 @@ class XMLTreeTest(unittest.TestCase):
         v2 = ['select', '__ASTERISK__', 'from', 'entities',]
         self.assert_equals(v1, v2)
 
-    def test_get_xpath(self):
+    def testgenerate_tokens_xpath(self):
         """ """
         xmltree = XMLTree()
 
         tokens = xmltree.tokenize(self.queries[0])
-        v1 = xmltree._get_xpath(tokens) 
+        v1 = xmltree.generate_tokens_xpath(tokens) 
         v2 = '//select/__ASTERISK__/from/entityvals'
         self.assert_equals(v1, v2)
 
         tokens = xmltree.tokenize(self.queries[1])
-        v1 = xmltree._get_xpath(tokens) 
+        v1 = xmltree.generate_tokens_xpath(tokens) 
         v2 = '//select/__ASTERISK__/from/entityrelations/where/id__EQUALS__1'
         self.assert_equals(v1, v2)
 
         tokens = xmltree.tokenize(self.queries[2])
-        v1 = xmltree._get_xpath(tokens) 
+        v1 = xmltree.generate_tokens_xpath(tokens) 
         v2 = '//select/__ASTERISK__/from/entities'
         self.assert_equals(v1, v2)
 
@@ -112,18 +112,58 @@ class XMLTreeTest(unittest.TestCase):
         for query in self.queries:
             xmltree.insert_query(xmltree.root, query)
 
-        v1 = xmltree.get_autocompletes('//doesnotexist')
-        v2 = []
-        self.assert_equals(v1, v2)
-
-        query = 'select * doesnotexist'
-        v1 = xmltree.get_autocompletes(query)
-        v2 = []
-        self.assert_equals(v1, v2)
-
+        # test tokens only can be autocompleted
         query = 'select * from'
-        v1 = xmltree.get_autocompletes(query)
+        v1 = xmltree.get_autocompletes(query, next_token_only=True)
         v2 = ['entityvals', 'entityrelations', 'entities',]
+        self.assert_equals(v1, v2)
+
+        # test tokens only can be autocompleted with partial token
+        query = 'select * from entity'
+        query, token = xmltree.get_query_parts(query)
+        v1 = xmltree.get_autocompletes(query, token=token, next_token_only=True)
+        v2 = ['entityvals', 'entityrelations',]
+        self.assert_equals(v1, v2)
+
+        # test entire queries are autocompleted
+        query = 'select * from'
+        query, token = xmltree.get_query_parts(query)
+        v1 = xmltree.get_autocompletes(query)
+        v2 = ['select * from entityvals',
+              'select * from entityrelations where id=1',
+              'select * from entities',]
+        self.assert_equals(v1, v2)
+        
+        # test entire queries are autocompleted with partial key
+        query = 'select * from entity'
+        query, token = xmltree.get_query_parts(query)
+        v1 = xmltree.get_autocompletes(query, token=token)
+        v2 = ['select * from entityvals',
+              'select * from entityrelations where id=1',]
+        self.assert_equals(v1, v2)
+        
+        # test a token only can be marked
+        query = 'select * from entity'
+        query, token = xmltree.get_query_parts(query)
+        v1 = xmltree.get_autocompletes(query, token=token, next_token_only=True, mark=True)
+        v2 = ['__MARK_START__entity__MARK_END__vals',
+              '__MARK_START__entity__MARK_END__relations',]
+        self.assert_equals(v1, v2)
+
+        # test an entire query can be marked
+        query = 'select * from entity'
+        query, token = xmltree.get_query_parts(query)
+        v1 = xmltree.get_autocompletes(query, token=token, mark=True)
+        v2 = ['__MARK_START__select * from entity__MARK_END__vals',
+              '__MARK_START__select * from entity__MARK_END__relations where id=1',]
+        self.assert_equals(v1, v2)
+        
+        # test n_results with entire queries
+        query = 'select * from'
+        query, token = xmltree.get_query_parts(query)
+        v1 = xmltree.get_autocompletes(query, n_results=2)
+        v2 = ['select * from entityvals',
+              'select * from entityrelations where id=1',]
         self.assert_equals(v1, v2)
 
     def test_get_leaf_nodes(self):
@@ -152,17 +192,6 @@ class XMLTreeTest(unittest.TestCase):
               '/querytree/select/__ASTERISK__/from/entities',]
         self.assert_equals(v1, v2)
 
-    def test_get_existing_queries(self):
-        """ """
-        xmltree = XMLTree()
-        for query in self.queries:
-            xmltree.insert_query(xmltree.root, query)
-
-        v1 = xmltree.get_existing_queries(xmltree.root)
-        v2 = ['select * from entityvals',
-              'select * from entityrelations where id=1',
-              'select * from entities',]
-        self.assert_equals(v1, v2)
         
 if __name__ == '__main__':
     unittest.main()
