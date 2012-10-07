@@ -3,33 +3,36 @@
  * http://digitalfoo.net
  */
 
-var KEY_ENTER = 13;
-var HOST = 'http://localhost:8080';
+DEBUG = true
 
+
+var KEY_ENTER = 13;
+//var HOST = 'http://localhost:8080';
+var HOST = 'http://localhost:5000';
+
+var IDENTIFIER = 'lyle';
 
 //
-// getAutocompletes
+// getSuggestions
 //
 //
 
 function getSuggestionAjaxCall(query) {
 	// Make an AJAX call to get a list of suggestions.
     $.ajax({
-        url: HOST + '',
-        data: {'userinput': query, 'cb': 'get_autocompletes', 'n': 7,
-        	   'mark': true},
-        datatype: 'jsonp',
-        jsonp: 'callback',
-        jsonpCallback: 'get_autocompletes',
-        success: getAutocompletesCallback,
+        url: HOST + '/id/' + IDENTIFIER + '/',
+        type: 'OPTIONS',
+        data: {'n': 7, 'mark': true, 'query': query},
+        datatype: 'json',
+        success: getSuggestionsCallback,
         error: ajaxError
     });
 }
 
-function getAutocompletesCallback(data, textStatus, jqXHR) {
+function getSuggestionsCallback(data, textStatus, jqXHR) {
 	// 
     var html = '';
-    var json = parseJsonp(data, 'get_autocompletes(', 'getAutocompletes');
+    var json = parseJsonp(data, 'get_autocompletes(', 'getSuggestions');
     
     if (json) {
     	html = 'query added...';
@@ -52,11 +55,10 @@ function getAutocompletesCallback(data, textStatus, jqXHR) {
 function submitQueryAjaxCall(query) {
     // Make an AJAX call to get a list of suggestions.
     $.ajax({
-        url: HOST,
-        data: {'userinput': query, 'cb': 'submit_query'},
-        datatype: 'jsonp',
-        jsonp: 'callback',
-        jsonpCallback: 'submit_query',
+        url: HOST + '/id/' + IDENTIFIER + '/',
+        type: 'PUT',
+        data: {'query': query},
+        datatype: 'json',
         success: submitQueryCallback,
         error: ajaxError
     });
@@ -64,15 +66,18 @@ function submitQueryAjaxCall(query) {
 
 function submitQueryCallback(data, textStatus, jqXHR) {
     // Check for a successful return and show a success message.	
-    var html = '';
-    var json = parseJsonp(data, 'submit_query(', 'submitQueryCallback');
+    var json = JSON.parse(data);
     
-    if (json) {
-    	html = 'query added...';
-    } 
+    if (json != true) {
+    	if (DEBUG == true) {
+    		console.log('submitQueryCallback: !json');
+    	}
+    	return;
+    }
     
+    var html = 'query successfully added...'; 
     $('#status').html(html);
-    setTimeout(function() { $('#status').html(''); }, 1500);
+    setTimeout(function() { $('#status').html('<br>'); }, 1500);
 }
 
 
@@ -84,11 +89,9 @@ function submitQueryCallback(data, textStatus, jqXHR) {
 function getExistingQueriesAjaxCall(query) {
     // Make an AJAX call to get a list of suggestions.
     $.ajax({
-        url: HOST,
-        data: {'cb': 'get_existing'},
-        datatype: 'jsonp',
-        jsonp: 'callback',
-        jsonpCallback: 'get_existing',
+        url: HOST + '/id/' + IDENTIFIER + '/',
+        type: 'GET',
+        datatype: 'json',
         success: getExistingQueriesCallback,
         error: ajaxError
     });
@@ -96,13 +99,16 @@ function getExistingQueriesAjaxCall(query) {
 
 function getExistingQueriesCallback(data, textStatus, jqXHR) {
     // Get all existing queries and print them in the #existing div.
-    var html = '';
-    var json = parseJsonp(data, 'get_existing(', 'getExistingQueries');
+    var json = JSON.parse(data);
     
-    if (json) {
-    	html = json['results'].join('<br>');
+    if (!json || json.length == 0) {
+    	if (DEBUG == true) {
+    		console.log('submitQueryCallback: !json');
+    	}
+    	return;
     }
- 
+    
+	var html = json.join('<br>');
     $('#existing').html(html);
 }
 
@@ -150,7 +156,7 @@ $(document).ready(function(){
 	
 	getExistingQueriesAjaxCall();
 	
-    $("#userinput").bind('keyup', function(event) {
+    $("#query").bind('keyup', function(event) {
     	
     	// Bail if no input in the text entry.
     	if (!$(this).val()) {
@@ -158,10 +164,10 @@ $(document).ready(function(){
         }
     	
     	var query = $(this).val();
-
+    	
     	if (event && event.keyCode == KEY_ENTER) {
             // Add the query to the collection of known queries.
-            submitQueryAjaxCall(query);
+    		submitQueryAjaxCall(query);
             $(this).val('');
             $('#suggestions').html('');
             getExistingQueriesAjaxCall();
@@ -169,6 +175,6 @@ $(document).ready(function(){
             // Get suggestions based on what the user is typing.
     		getSuggestionAjaxCall(query);
     	}
-    });  // userinput keyup
+    });  // query keyup
     
 });  // end document ready

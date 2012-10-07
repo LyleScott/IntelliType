@@ -4,6 +4,10 @@ lyle@digitalfoo.net
 http://digitalfoo.net
 """
 
+import hashlib
+import os
+import string
+
 from lxml import etree
 
 
@@ -31,9 +35,14 @@ class XMLTree(object):
 
     """
 
-    token_subs = [('"', '\''),
+    token_subs = [('<', '__LESS_THAN__'),
+                  ('>', '__GREATER_THAN__'),
+                  ('&', '__AMPERSAND__'),
+                  ('\'', '__SINGLE_QUOTE__'),
+                  ('"', '__DOUBLE_QUOTE__'),
                   ('*', '__ASTERISK__'),
                   ('=', '__EQUALS__'),]
+    
 
     def __init__(self, xml=None):
         """Initialization."""
@@ -43,10 +52,20 @@ class XMLTree(object):
             self.root = etree.Element('querytree')
             
         self.tree = etree.ElementTree(self.root)
+        self.invalid_char_map_fh = None
 
     def __repr__(self):
         """String representation."""
-        return etree.tostring(self.root, pretty_print=1)
+        return self.getXml(pretty_print=True)
+    
+    def __del__(self):
+        """Destructor."""
+        if self.invalid_char_map_fh:
+            self.invalid_char_map_fh.close()
+    
+    def get_xml(self, pretty_print=True):
+        """Return the XML of the entire XML Tree."""
+        return etree.tostring(self.root, pretty_print=pretty_print)
     
     def generate_tokens_xpath(self, tokens):
         """Return the XPath representation for a list of tokens."""
@@ -56,6 +75,9 @@ class XMLTree(object):
 
     def tokenize(self, query):
         """Split a query up into a list of tokens."""
+        if not query:
+            return []
+        
         if isinstance(query, list):
             query = ' '.join(query)
 
@@ -82,8 +104,61 @@ class XMLTree(object):
 
         return query
 
+    def _get_invalid_character_map(self):
+        """Get the file handle to the invalid character map CSV file if it
+        isn't already available.
+        """
+        if not self.invalid_char_map_fh:
+            filename = 'invalid_character_map.csv'
+            if not os.path.exists(filename):
+                mode = 'wb+'
+            else:
+                mode = 'rb+'
+                
+            self.invalid_char_map_fh = open(filename, mode)
+        
+        return self.invalid_char_map_fh
+
+    def sanitize_xml(self, query):
+        """Make a substitution for invalid characters."""
+        valid_characters = ' %s' % string.ascii_letters
+        self._get_invalid_character_map()
+        
+        # Replace the characters that are already known.
+        for row in self.invalid_char_map_fh:
+            if not row.strip():
+                continue
+            original, translation = row.split('|$|')
+            query = query.replace(original, translation)
+        
+        # Add / translate any new illegal characters that are found.
+        new_invalid_characters = []
+        for character in query:
+            if character not in valid_characters:
+                md5 = hashlib.md5(character).hexdigest()
+                shash = '__%s__' % md5
+                query = query.replace(character, shash)
+                new_invalid_characters.append('%s|$|%s\n' % (character, shash,))
+
+        self.invalid_char_map_fh.writelines(new_invalid_characters)
+        
+        return query
+
+    def unsanitize_xml(self, query):
+        """ """
+        self._get_invalid_character_map()
+        for row in self.invalid_char_map_fh:
+            if not row:
+                continue
+            translation, original = row.split('|$|')
+            print '%s --> %s' % (translation, original,)
+            query = query.replace(translation, original)
+                
+        return query
+    
     def insert_query(self, root, query):
         """Insert a query into the tree."""
+        query = self.sanitize_xml(query)
         tokens = self.tokenize(query)
         
         xpath = self.generate_tokens_xpath(tokens)
@@ -94,6 +169,7 @@ class XMLTree(object):
         for i in range(len(tokens)):   
             subtokens = tokens[:i+1]
             subtokens_xpath = self.generate_tokens_xpath(subtokens)
+            
             existing_path = root.xpath(subtokens_xpath)
             if not existing_path:
                 prevtoken = etree.SubElement(prevtoken, tokens[i])
@@ -107,7 +183,7 @@ class XMLTree(object):
         If the user is starting a new token, return the entire string as nodes
         and make the token a blank string.
         """
-        blank_at_end = query[-1] == ' '
+        blank_at_end = query and query[-1] == ' '
         tokens = self.tokenize(query)
         if blank_at_end:
             node = ' '.join(tokens)
@@ -116,7 +192,10 @@ class XMLTree(object):
         else:
             node = ' '.join(tokens[:-1])
             node = self.untokenize(node)
-            token = tokens[-1]
+            if tokens:
+                token = tokens[-1]
+            else:
+                token = ''
 
         return (node, token,)
 
@@ -138,6 +217,7 @@ class XMLTree(object):
                 print 'n_results is not an integer: %s' % e
                 return []
         
+        query = self.sanitize_xml(query)
         tokens = self.tokenize(query)
         xpath = self.generate_tokens_xpath(tokens)
         ret = []
@@ -177,7 +257,10 @@ class XMLTree(object):
                             q = '%s %s' % (query, token,)
                         else:
                             q = query
+                        existing_query = self.unsanitize_xml(existing_query)
+                        print 'EXISTINGQ', existing_query
                         existing_query = existing_query.replace(q, q+'__MARK_END__')
+                        
                         ret.append(existing_query)
                 else:        
                     ret.extend(existing_queries)
@@ -234,6 +317,7 @@ class XMLTree(object):
             
         paths.extend(self.get_leaf_paths(root))
         if paths:
-            paths = [self.untokenize(path) for path in self.get_leaf_paths(root)]
+            paths = [self.unsanitize_xml(self.untokenize(path))
+                     for path in self.get_leaf_paths(root)]
     
         return paths or []

@@ -11,7 +11,7 @@ from sqlalchemy import exceptions
 
 class XmltreeDB():
     """An interface for storing, retrieving, and updating xmltrees for a unique
-    identifier.
+    uuid.
     """
     
     def __init__(self, engine):
@@ -36,16 +36,20 @@ class XmltreeDB():
         
         return tbl
    
-    def _identifier_exists(self, identifier):
-        """Return true if the identifier exists in the DB, false if not."""
+    def _uuid_exists(self, uuid):
+        """Return true if the uuid exists in the DB, false if not."""
         xmltrees_tbl = self._get_table('xmltrees')
-        query = select([xmltrees_tbl,], xmltrees_tbl.c.uuid==identifier)
+        query = select([xmltrees_tbl,], xmltrees_tbl.c.uuid==uuid)
         result = query.execute()
+        
         return bool(result.rowcount)
         
     def create_tables(self, tablenames=None):
         """Create a table with the correct column info."""
-        if tablenames is not None and not isinstance(tablenames, list):
+        
+        # Ensure tablenames is a datatype that supports a proper IN method.    
+        if tablenames and (not isinstance(tablenames, list) and
+                           not isinstance(tablenames, tuple)):
             tablenames = (tablenames,)
             
         if not tablenames or 'xmltrees' in tablenames:
@@ -58,20 +62,20 @@ class XmltreeDB():
         
         self.metadata.create_all(self.db)
         
-    def save_xmltree(self, identifier, xmltree):
-        """Put the xmltree for an identifier."""
+    def save_xmltree(self, uuid, xmltree):
+        """Put the xmltree for an uuid."""
         xmltrees_tbl = self._get_table('xmltrees')
         now = datetime.now()
         
-        # If it exists, update the xmltree for the identifier, Otherwise,
-        # create a new row for the identifier.
-        if self._identifier_exists(identifier):
+        # If it exists, update the xmltree for the uuid. Otherwise, create a
+        # new row for the uuid.
+        if self._uuid_exists(uuid):
             values = {xmltrees_tbl.c.xmltree: xmltree,
                       xmltrees_tbl.c.modified: now}
-            wheres = (xmltrees_tbl.c.uuid==identifier,)
+            wheres = (xmltrees_tbl.c.uuid==uuid,)
             q = xmltrees_tbl.update().values(values).where(*wheres)
         else:
-            values = {xmltrees_tbl.c.uuid: identifier,
+            values = {xmltrees_tbl.c.uuid: uuid,
                       xmltrees_tbl.c.xmltree: xmltree,
                       xmltrees_tbl.c.created: now,
                       xmltrees_tbl.c.modified: now,} 
@@ -84,19 +88,18 @@ class XmltreeDB():
         else:
             return 'error'
         
-    def load_xmltree(self, identifier):
-        """Get the xmltree for an identifier."""
+    def load_xmltree(self, uuid):
+        """Get the xmltree for an uuid."""
         xmltrees_tbl = self._get_table('xmltrees')
         
         query = select([xmltrees_tbl.c.xmltree,],
-                        xmltrees_tbl.c.uuid==identifier)
+                        xmltrees_tbl.c.uuid==uuid)
         result = query.execute()
         
         l = result.rowcount
         if l == 0:
-            raise
             return {'error': 'load_xmltree --> no xmltree found for key %s' %
-                    identifier}
+                    uuid}
         elif l == 1:
             row = result.fetchone()
             return row[0]
