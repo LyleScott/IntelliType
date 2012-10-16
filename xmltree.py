@@ -71,6 +71,7 @@ class XMLTree(object):
         """Return the XPath representation for a list of tokens."""
         if not isinstance(tokens, list):
             tokens = (tokens,)
+            
         return '//%s' % '/'.join(tokens)
 
     def tokenize(self, query):
@@ -82,9 +83,11 @@ class XMLTree(object):
             query = ' '.join(query)
 
         query = query.lower()
+        
         for search, replace in self.token_subs:
             query = query.replace(search, replace)
             
+        # TODO - is this needed?
         for search in [token[1] for token in self.token_subs]:
             query = query.replace(search.lower(), search)
         
@@ -162,7 +165,13 @@ class XMLTree(object):
         tokens = self.tokenize(query)
         
         xpath = self.generate_tokens_xpath(tokens)
-        if root.xpath(xpath):
+        
+        # Query already exists.
+        existingNode = root.xpath(xpath)
+        if existingNode:
+            existingNode = existingNode[0]
+            existingValue = existingNode.get('n_final_node', 0)
+            existingNode.set('n_final_node', str(int(existingValue)+1))
             return
         
         prevtoken = root
@@ -176,6 +185,9 @@ class XMLTree(object):
             else:
                 prevtoken = existing_path[0]
                 
+        val = prevtoken.get('n_final_node', 0)
+        prevtoken.set('n_final_node', str(int(val)))
+            
         return prevtoken 
                 
     def get_query_parts(self, query):
@@ -199,8 +211,9 @@ class XMLTree(object):
 
         return (node, token,)
 
-    def get_autocompletes(self, query, token=None, mark=False, n_results=None,
-                          next_token_only=False):
+    def get_autocompletes(self, query, token=None, mark=False,
+                          mark_l='__MARK_START__', mark_r='__MARK_STOP__',
+                          n_results=None, next_token_only=False):
         """Try to find the exact node for a given query.
         
         query           -- a query to find in the XML tree
@@ -208,7 +221,6 @@ class XMLTree(object):
         next_token_only -- autocomplete the next token only instead of the
                            entire query
         """
-        
         # argument sanity check
         if n_results is not None:
             try:
@@ -243,7 +255,8 @@ class XMLTree(object):
             if next_token_only is True:    
                 tag = self.untokenize(child.tag)
                 if mark:
-                    tag = '__MARK_START__%s__MARK_END__%s' % (tag[:len(token)], tag[len(token):])
+                    tag = ''.join((mark_l, tag[:len(token)], mark_r,
+                                   tag[len(token):]))
                 ret.append(tag)
             else:
                 existing_queries = self.get_children_queries(child, include_self=True)
@@ -251,15 +264,16 @@ class XMLTree(object):
                 if mark:
                     # Mark the substring of the query that is known.
                     for existing_query in existing_queries:
-                        existing_query = '__MARK_START__%s' % existing_query
+                        existing_query = ''.join((mark_l, existing_query,))
+                        
                         if token:
                             token = self.untokenize(token)
-                            q = '%s %s' % (query, token,)
+                            q = ' '.join((query, token,))
                         else:
                             q = query
+                        
                         existing_query = self.unsanitize_xml(existing_query)
-                        print 'EXISTINGQ', existing_query
-                        existing_query = existing_query.replace(q, q+'__MARK_END__')
+                        existing_query = existing_query.replace(q, ''.join((q, mark_r,)))
                         
                         ret.append(existing_query)
                 else:        
@@ -271,7 +285,7 @@ class XMLTree(object):
                         break
                     elif len(ret) == n_results:
                         break
-                
+
         return ret
                 
     def get_leaf_nodes(self, node, leaves=None):

@@ -7,42 +7,58 @@ DEBUG = true
 
 
 var KEY_ENTER = 13;
-//var HOST = 'http://localhost:8080';
 var HOST = 'http://localhost:5000';
+var identifier = location.hostname + $.browser.version.replace(/[^A-Za-z0-9]+/, '');
 
-var IDENTIFIER = 'lyle';
+function debug(msg) {
+	if (DEBUG && typeof console !== undefined) {
+		console.log(msg);
+	}
+}
+
+debug('identifier: ' + identifier);
+
 
 //
-// getSuggestions
+// getAutocompletes
 //
 //
 
-function getSuggestionAjaxCall(query) {
-	// Make an AJAX call to get a list of suggestions.
+function getAutocompletesAjaxCall(query) {
+	// Make an AJAX call to get a list of autocompletes.
+	
+	var args = {'n': 7,
+			    'mark': true,
+			    'query': query,
+			    'mark': true,
+			    'markL': '<strong>',
+			    'markR': '</strong>'}
+	var args_ = '?';
+	for (i in args) {
+		args_ += i + '=' + args[i] + '&';
+	}
+	
     $.ajax({
-        url: HOST + '/id/' + IDENTIFIER + '/',
+        url: HOST + '/id/' + identifier + args_,
         type: 'OPTIONS',
-        data: {'n': 7, 'mark': true, 'query': query},
         datatype: 'json',
-        success: getSuggestionsCallback,
+        success: getAutocompletesCallback,
         error: ajaxError
     });
 }
 
-function getSuggestionsCallback(data, textStatus, jqXHR) {
-	// 
-    var html = '';
-    var json = parseJsonp(data, 'get_autocompletes(', 'getSuggestions');
+function getAutocompletesCallback(data, textStatus, jqXHR) {
+	// Show possible autocompletes to user.
+    var json = JSON.parse(data);
     
-    if (json) {
-    	html = 'query added...';
-    } 
-    
-    if (json) {
-        html = json.results.join('<br>');
-        html = markToStrong(html);
+    if (typeof json == undefined) {
+    	debug('submitAutocompletesCallback: !json:');
+    	debug(json);
+    	
+    	return;
     }
     
+    var html = json.join('<br>');
     $('#suggestions').html(html);
 }
 
@@ -53,9 +69,9 @@ function getSuggestionsCallback(data, textStatus, jqXHR) {
 //
 
 function submitQueryAjaxCall(query) {
-    // Make an AJAX call to get a list of suggestions.
+    // Make an AJAX call to put a query into storage.
     $.ajax({
-        url: HOST + '/id/' + IDENTIFIER + '/',
+        url: HOST + '/id/' + identifier,
         type: 'PUT',
         data: {'query': query},
         datatype: 'json',
@@ -69,15 +85,18 @@ function submitQueryCallback(data, textStatus, jqXHR) {
     var json = JSON.parse(data);
     
     if (json != true) {
-    	if (DEBUG == true) {
-    		console.log('submitQueryCallback: !json');
-    	}
+    	debug('submitQueryCallback: !json:');
+    	debug(json);
+ 
     	return;
     }
     
-    var html = 'query successfully added...'; 
-    $('#status').html(html);
-    setTimeout(function() { $('#status').html('<br>'); }, 1500);
+    $('#status').html('query added...');
+    
+    setTimeout(function() { 
+    	$('#status').html('<br>'); 
+    	getExistingQueriesAjaxCall();
+	}, 500);
 }
 
 
@@ -86,10 +105,10 @@ function submitQueryCallback(data, textStatus, jqXHR) {
 //
 //
 
-function getExistingQueriesAjaxCall(query) {
+function getExistingQueriesAjaxCall() {
     // Make an AJAX call to get a list of suggestions.
     $.ajax({
-        url: HOST + '/id/' + IDENTIFIER + '/',
+        url: HOST + '/id/' + identifier,
         type: 'GET',
         datatype: 'json',
         success: getExistingQueriesCallback,
@@ -102,15 +121,16 @@ function getExistingQueriesCallback(data, textStatus, jqXHR) {
     var json = JSON.parse(data);
     
     if (!json || json.length == 0) {
-    	if (DEBUG == true) {
-    		console.log('submitQueryCallback: !json');
-    	}
+    	debug('getExistingQueriesCallback: !json:');
+    	debug(json);
+  
     	return;
     }
     
 	var html = json.join('<br>');
     $('#existing').html(html);
 }
+
 
 //
 // Utilities.
@@ -119,36 +139,10 @@ function getExistingQueriesCallback(data, textStatus, jqXHR) {
 
 function ajaxError(jqXHR, textStatus, errorThrown) {
 	// Attempt to gracefully print an error in a jQuery AJAX call.
-    if (console && console.log) {
-        console.log('jQuery AJAX error:\n' +
-        		    textStatus + '\n' +
-        		    errorThrown);
-    }
-}
-
-function markToStrong(query) {
-	// Replace the MARKS with strongs.
-	query = query.replace(/__MARK_START__/g, '<strong>');
-    query = query.replace(/__MARK_END__/g, '</strong>');
- 
-    return query;
-}
-
-function parseJsonp(data, prefix, error_label) {
-	// Parse a jsonp callback valid JSON.
-	data = data.substring(prefix.length, data.length); 
-	data = data.substring(0, data.length-1);
-	
-    try {
-        return json = $.parseJSON(data);
-    } catch (e) {
-        if (console && console.log) {
-        	console.log('error ' + error_label + ': ' + e);                      	
-        	console.log(e);
-        }
-    	
-    	return 'ERROR';
-    }
+	debug('jQuery AJAX error:');
+	debug(textStatus);
+	debug(errorThrown);
+	$('#existing').html('There was a problem communicating with the server.');
 }
 
 
@@ -170,11 +164,11 @@ $(document).ready(function(){
     		submitQueryAjaxCall(query);
             $(this).val('');
             $('#suggestions').html('');
-            getExistingQueriesAjaxCall();
     	} else {
             // Get suggestions based on what the user is typing.
-    		getSuggestionAjaxCall(query);
+    		getAutocompletesAjaxCall(query);
     	}
+    	
     });  // query keyup
     
 });  // end document ready
