@@ -1,6 +1,12 @@
 IntelliType
 ===========
 
+-- This project does not work. I broke it reorganizing things and i need to get
+it back to working and tests passing.
+
+
+---
+
 A small IntelliType / predictive typing engine written in Python.
 
 

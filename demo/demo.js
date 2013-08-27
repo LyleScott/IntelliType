@@ -8,7 +8,7 @@ DEBUG = true
 
 var KEY_ENTER = 13;
 var HOST = 'http://localhost:5000';
-var identifier = location.hostname + $.browser.version.replace(/[^A-Za-z0-9]+/, '');
+var identifier = location.hostname + '_' + $.browser.version.replace(/[^A-Za-z0-9]+/, '');
 
 function debug(msg) {
 	if (DEBUG && typeof console !== undefined) {
@@ -27,7 +27,7 @@ debug('identifier: ' + identifier);
 function getAutocompletesAjaxCall(query) {
 	// Make an AJAX call to get a list of autocompletes.
 	
-	var args = {'n': 7,
+	var args = {'n': 2,
 			    'mark': true,
 			    'query': query,
 			    'mark': true,
@@ -39,7 +39,7 @@ function getAutocompletesAjaxCall(query) {
 	}
 	
     $.ajax({
-        url: HOST + '/id/' + identifier + args_,
+        url: HOST + '/' + identifier + args_,
         type: 'OPTIONS',
         datatype: 'json',
         success: getAutocompletesCallback,
@@ -71,7 +71,7 @@ function getAutocompletesCallback(data, textStatus, jqXHR) {
 function submitQueryAjaxCall(query) {
     // Make an AJAX call to put a query into storage.
     $.ajax({
-        url: HOST + '/id/' + identifier,
+        url: HOST + '/' + identifier,
         type: 'PUT',
         data: {'query': query},
         datatype: 'json',
@@ -108,7 +108,7 @@ function submitQueryCallback(data, textStatus, jqXHR) {
 function getExistingQueriesAjaxCall() {
     // Make an AJAX call to get a list of suggestions.
     $.ajax({
-        url: HOST + '/id/' + identifier,
+        url: HOST + '/' + identifier,
         type: 'GET',
         datatype: 'json',
         success: getExistingQueriesCallback,

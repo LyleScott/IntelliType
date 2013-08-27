@@ -1,4 +1,4 @@
 #!/bin/sh
 
-export PYTHONPATH=$PYTHONPATH:`pwd`
+export PYTHONPATH=$PYTHONPATH:src
 source venv/bin/activate
